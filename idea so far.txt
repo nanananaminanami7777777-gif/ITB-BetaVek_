@@ -1,0 +1,20 @@
+Progress and idea so far
+**Firefly**:Alternately damage and boost, or heal and burn target. code done, no tested yet
+**Hornet**: halfed hp and double damage, spawn a beta Hornet on kill or destory building. code almost doune, dont know if onkill effect include destory building.
+**Leaper**: have aligned dodge, if side or behind had a vek attack change to attack two oblique tiles (like mantis). no web i guess? writing code
+**Scorpion**: back sting, web target ,  set a artillery a tile behind from and shot to in front of the scorpion, damage tile behind instead if blocked.
+**Scarab**: for now would stick to the old idea(freeaim) untill i have a better one
+**Beetle**: effect based on Charge distant ,0/1 damage at pointblank, 2/3 damage and push at 2 tile, 4/5 damage, push and explosion at 3 tile.
+**Blobber**: set a bomb on vek or mech
+**Burrower**: no idea
+**Centipede**: airbuster, projectile would check every empty tile, if it had building or unit on the side then explode. direct hit only damage one tile.
+**Crab**: crossfire, one artillery tile and one projectile tile damage at the same time, have to think how to write the code
+**Digger**: no idea yet, the old one effect too many tiles so i abandoned.
+**Bouncer**: if side or behind had a vek attack change to attack two oblique tiles (like mantis) with push, still push itself.
+**Gastropod**: had 3/5HP, instant kill any unit that had equal or lower hp.
+**Mosquito**: heatseeker, attack cause fire, ai would aim for burning unit(even vek) if possible
+**Moth**: no idea
+**Plasmodia**: set a spore on vek or mech.
+**Starfish**: flee to  opposite tile when adjacent tile be damaged.
+**Tumblebug**: 3/5 damage, deploy normal rock, cause explode on kill
+**Spider**:no idea
