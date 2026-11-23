@@ -2,7 +2,7 @@ local description = "Adds Beta versions of all Vek in Vextra. See mod options.(W
 
 local mod = {
 	id = "HK_BetaVextra",
-	name = "Beta Vextra",
+	name = "Beta Vextra(WIP)",
 	version = "WIP",
 	requirements = {},
 	dependencies = { 

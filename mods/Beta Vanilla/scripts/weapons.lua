@@ -36,14 +36,12 @@ function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 
 	distance = (p1:Manhattan(target))%2
 	if  distance == 1 then
-		damage = SpaceDamage(target, self.Damage)	
 		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
-		damage.sAnimation = self.Explosion
 	else
-		damage = SpaceDamage(target, -self.Damage)
+		damage.iDamage = -self.Damage
 		damage.iFire = 1
-		damage.sAnimation = self.Explosion
 	end
+	damage.sAnimation = self.Explosion
 	ret:AddQueuedProjectile(damage, self.Projectile)
 	return ret
 end
@@ -56,21 +54,23 @@ function BetaFireflyAtk1:GetTargetScore(p1,p2)
 	local ret = 0
 		if 	Board:IsPawnSpace(p2)	then--check if unit
 			if  distance == 1 then	--odd for damage
-				if p2:GetTeam() == TEAM_PLAYER	then 
-					ret = ret + 5 
-				else 
-					ret = ret - 5  
+				if Board:GetPawn(p2):GetTeam() == TEAM_PLAYER	then 
+					ret = ret + 10  
+				else
+					ret = ret + 5
 				end
 			else	--even for heal
-				if p2:GetTeam() == TEAM_ENEMY	then 
-					ret = ret + 5 
-				else 
-					ret = ret - 5  
+				if Board:GetPawn(p2):GetTeam() == TEAM_ENEMY 	then 
+					ret = ret + 10
+				else
+					ret = ret + 5	
 				end
 			end
-		else	--if not, then building, if odd distance
-			if	Board:GetTerrain(p2) == TERRAIN_BUILDING then
-				if   distance == 1 then 	ret = ret + 5 else 	ret = ret - 5  end
+		else
+			if Board:GetTerrain(p2) == TERRAIN_BUILDING	then	
+				if  distance == 1 then		
+					ret = ret + 5
+				end
 			end
 		end
 	return ret

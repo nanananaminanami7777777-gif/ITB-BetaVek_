@@ -2,7 +2,7 @@ local description = "Adds Omega versions of all Vek in Bots and Bugs. See mod op
 
 local mod = {
 	id = "Meta_OmegaBotsAndBugs",
-	name = "Omega Bots and Bugs",
+	name = "Omega Bots and Bugs(WIP)",
 	version = "1.0.0",
 	requirements = {},
 	dependencies = { 
