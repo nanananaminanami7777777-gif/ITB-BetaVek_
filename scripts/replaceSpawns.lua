@@ -17,5 +17,6 @@ function Spawner:NextPawn(pawn_tables)
 			chance = 0.5 --default setting
 		end
 			if math.random() <= chance then ret = "Beta"..ret end --RNG check
+	end
 	return ret
 end

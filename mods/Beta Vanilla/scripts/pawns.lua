@@ -11,7 +11,7 @@ local function IsTipImage()
 	return Board:GetSize() == Point(6,6)
 end
 
-TIER_Beta = 10
+TIER_Beta = 20
 
 -------------
 --   Art   --
@@ -82,7 +82,7 @@ BetaBurnbug1 = Pawn:new{
 	Portrait = "enemy/BetaBurnbug2",
 	DefaultTeam = TEAM_ENEMY,
 	ImpactMaterial = IMPACT_INSECT,
-	Tier = TIER_Beta,
+	Tier = TIER_Beta,	
 }
 AddPawn("BetaBurnbug1")
 
@@ -114,7 +114,7 @@ BetaFirefly1 = Pawn:new{
 	Portrait = "enemy/BetaFirefly2",
 	DefaultTeam = TEAM_ENEMY,
 	ImpactMaterial = IMPACT_INSECT,
-	Tier = TIER_Beta,
+	Tier = TIER_Beta,	
 }
 AddPawn("BetaFirefly1")
 
@@ -146,7 +146,7 @@ BetaLeaper1 = Pawn:new{
 	Portrait = "enemy/BetaLeaper2",
 	DefaultTeam = TEAM_ENEMY,
 	ImpactMaterial = IMPACT_INSECT,
-	Tier = TIER_Beta,
+	Tier = TIER_Beta,	
 }
 AddPawn("BetaLeaper1")
 

@@ -9,7 +9,7 @@ modApi:appendAsset("img/effects/stinger_U.png", resourcePath.."img/effects/sting
 
 
 BetaFireflyAtk1 = Skill:new{
-	Name = "unstableUnstable Thorax",
+	Name = "Unstable Thorax",
 	Description = "Launch a unstable mass of goo either dealing 1 damage and boosted, or Heal 1 and burn.",
 	Damage = 1,
 	PathSize = 8,
@@ -34,7 +34,7 @@ function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 
 	local target = GetProjectileEnd(p1,p2)  
 	if  p1:Manhattan(target)%2 == 1 then	
-		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId())
+		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
 		damage.sAnimation = self.Explosion
 	else
 		damage = SpaceDamage(target, -self.Damage)
@@ -51,16 +51,25 @@ function BetaFireflyAtk1:GetTargetScore(p1,p2)
 	--Beta Firefly need to damage player in odd distant and heal vek in even distant
 	local ret = 0
 		if  p1:Manhattan(p2)%2 == 1 then --odd for damage
-			if p2:GetTeam() == TEAM_PLAYER or Board:GetTerrain(p2) == TERRAIN_BUILDING then ret + 5 else ret = ret - 5  end
+			if (Board:IsPawnSpace(p2) and p2:GetTeam() == TEAM_PLAYER) or Board:GetTerrain(p2) == TERRAIN_BUILDING then 
+				ret = ret + 5 
+			else 
+				ret = ret - 5  
+			end
+
 		else	--even for heal
-			if p2:GetTeam() == TEAM_ENEMY and Board:GetPawn(p2):IsQueued() then ret = ret + 5 else ret = ret - 5  end
+			if (Board:IsPawnSpace(p2) and p2:GetTeam() == TEAM_ENEMY) and Board:GetPawn(p2):IsQueued() then 
+				ret = ret + 5 
+			else 
+				ret = ret - 5  
+			end
 		end
 	return ret
 end
 
 ----------|||------------
 
-FireflyAtk2 = FireflyAtk1:new{
+BetaFireflyAtk2 = BetaFireflyAtk1:new{
 	Name = "Volatile Thorax",
 	Description = "Launch a unstable mass of goo either dealing 3 damage and boosted, or Heal 3 and burn.",
 	Damage = 3,
@@ -106,6 +115,7 @@ function BetaHornetAtk1:GetSkillEffect(p1, p2)
 	local direction = GetDirection(p2 - p1)	
 	
 	local damage = SpaceDamage(p2,self.Damage)
+	local damage2 = SpaceDamage(p2+DIR_VECTORS[direction],self.Damage)
 	damage.sAnimation = "explohornet_"..direction
 
 	if Board:IsDeadly(damage, user) then 
@@ -116,11 +126,19 @@ function BetaHornetAtk1:GetSkillEffect(p1, p2)
 		end
 		damage.bKO_Effect = true --this is just visuals
 	end
+
+	if Board:IsDeadly(damage2, user) then 
+		if self.TargetBehind then		
+			damage2.sPawn = "BetaHornet2" 	
+		else 	
+			damage2.sPawn = "BetaHornet1" 
+		end
+		damage2.bKO_Effect = true --this is just visuals
+	end
 	
 	ret:AddQueuedMelee(p1,damage, 0.25)
 	if self.TargetBehind then
-		damage.loc = p2+DIR_VECTORS[direction]
-		ret:AddQueuedDamage(damage)
+		ret:AddQueuedDamage(damage2)
 	end
 	return ret
 end	
@@ -149,7 +167,7 @@ BetaHornetAtkB = BetaHornetAtk2:new{Damage = 6, Class = "Enemy", Name = "Impalin
 --Leaper
 ----------------------
 
-BetaLeaperAtk1 = Skill:new{
+BetaLeaperAtk1_StarfishAtk = Skill:new{
 	Name = "split Fangs",
 	Description = "preparing to strike a target for 3 damage, attack two oblique tiles if other veks on side or behind.",
 	PathSize = 1,
@@ -179,7 +197,11 @@ function BetaLeaperAtk1_StarfishAtk:GetSkillEffect(p1, p2)
 	damage.sSound = self.SoundBase.."/attack"
 
 	for j = 1,3 do	--check if onther vek from behind or side
-		if Board:IsPawnSpace(p1 + DIR_VECTORS[(direction + j)% 4]) and Board:GetPawn(p1 + DIR_VECTORS[(direction + j)% 4]):GetTeam() == TEAM_ENEMY then SecondFrom = true end
+		if Board:IsPawnSpace(p1 + DIR_VECTORS[(direction + j)% 4]) and Board:GetPawn(p1 + DIR_VECTORS[(direction + j)% 4]):GetTeam() == TEAM_ENEMY then 
+			SecondFrom = true 
+		else
+			SecondFrom = false
+		end
 	end
 	if SecondFrom then
 		damage.loc = p2 + DIR_VECTORS[(direction + 1)% 4]
@@ -188,6 +210,7 @@ function BetaLeaperAtk1_StarfishAtk:GetSkillEffect(p1, p2)
 		ret:AddQueuedDamage(damage)
 	else
 		ret:AddQueuedMelee(p1,damage)
+	end
 	return ret
 end	 
 
@@ -211,7 +234,7 @@ BetaLeaperAtk2_StarfishAtk = BetaLeaperAtk1_StarfishAtk:new{
 	}
 }
 
-BetaLeaperAtkB = BetaLeaperAtk2:new{Damage = 5, Class = "Enemy", Name = "Rending Fangs"}
+BetaLeaperAtkB_StarfishAtk = BetaLeaperAtk2_StarfishAtk:new{Damage = 5, Class = "Enemy", Name = "Rending Fangs"}
 
 --scorpion
 ----------------------
@@ -279,5 +302,27 @@ function BetaScorpionAtk1:GetTargetScore(p1,p2)
 	if Board:IsPawnSpace(behind) and Board:GetPawnTeam(behind) == TEAM_ENEMY	then	ret = -100 end
 	return ret	
 end
+
+----------|||------------
+
+BetaScorpionAtk2 = BetaScorpionAtk1:new{
+	Name = "Backsting Spinneret",
+	Description = "Web an adjacent target, preparing to fire a short-ranged artillery shot from behind for 3 damage.",
+	PathSize = 1,
+	Icon = "weapons/enemy_scorpion2.png",	
+	Damage = 3,
+	Range = 1,
+	Class = "Enemy",
+	LaunchSound = "",
+	SoundBase = "/enemy/scorpion_soldier_2",
+	ImpactSound = "/impact/generic/explosion",
+	Projectile = "effects/shotup_crab2.png",
+	TipImage = {
+		Unit = Point(2,2),
+		Enemy = Point(2,1),
+		Target = Point(2,1),
+		CustomPawn = "BetaScorpion2"
+	}
+}
 
 BetaScorpionAtkB = BetaScorpionAtk2:new{Damage = 4, Class = "Enemy", Name = "Rupturing Spinneret"}

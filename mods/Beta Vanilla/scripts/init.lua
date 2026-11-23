@@ -9,7 +9,7 @@ local mod = {
 		modApiExt = "1.21",
 		memedit = "1.1.4",
 		easyEdit = "2.0.6",
-		Meta_OmegaVek = "1.0.0",
+		HK_BetaVek = "0.1",
 	},
 	modApiVersion = "2.9.2",
 	icon = "mod_icon.png",
