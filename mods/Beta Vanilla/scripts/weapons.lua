@@ -12,7 +12,7 @@ BetaFireflyAtk1 = Skill:new{
 	Name = "Unstable Thorax",
 	Description = "Launch a unstable mass of goo either dealing 1 damage and boosted, or Heal 1 and burn.",
 	Damage = 1,
-	PathSize = 8,
+	PathSize = 1,
 	Range = RANGE_PROJECTILE,
 	Class = "Enemy",
 	Icon = "weapons/enemy_firefly1.png",
@@ -31,8 +31,9 @@ function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 	local ret = SkillEffect()
 	local dir = GetDirection(p2 - p1)
 	local target = GetProjectileEnd(p1,p2) 
-	local damage = SpaceDamage(target, self.Damage)		 
-	if  (p1:Manhattan(target))%2 == 1 then
+	local damage = SpaceDamage(target, self.Damage)	
+	local distance = p1:Manhattan(target)%2	
+	if  distance == 1 then
 		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
 	else
 		damage.iDamage = -self.Damage
@@ -42,8 +43,6 @@ function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 	ret:AddQueuedProjectile(damage, self.Projectile)
 	return ret
 end
-
-
 
 function BetaFireflyAtk1:GetTargetScore(p1,p2)
 	--Beta Firefly need to damage player in odd distance and heal vek in even distance
@@ -125,16 +124,21 @@ function BetaHornetAtk1:GetSkillEffect(p1, p2)
 	damage.sAnimation = "explohornet_"..direction
 
 	if Board:IsDeadly(damage, user) then 
-		damage.sPawn = "BetaHornet1" 
+		if self.TargetBehind then
+			damage.sPawn = "BetaHornet2" 
+		else
+			damage.sPawn = "BetaHornet1" 
+		end
+		damage.bKO_Effect = true --this is just visuals
+	end
+
+	if Board:IsDeadly(damage2, user) then 
+		damage2.sPawn = "BetaHornet2" 
 		damage.bKO_Effect = true --this is just visuals
 	end
 
 	ret:AddQueuedMelee(p1,damage, 0.25)
 	if self.TargetBehind then
-		if Board:IsDeadly(damage2, user) then 
-			damage2.sPawn = "BetaHornet2" 	
-			damage2.bKO_Effect = true --this is just visuals
-		end
 		ret:AddQueuedDamage(damage2)
 	end
 	return ret
@@ -230,6 +234,35 @@ BetaLeaperAtk2_StarfishAtk = BetaLeaperAtk1_StarfishAtk:new{
 		CustomPawn = "BetaLeaper2"
 	}
 }
+
+function BetaLeaperAtk2_StarfishAtk:GetSkillEffect(p1, p2)
+	local ret = SkillEffect()
+	local direction = GetDirection(p2 - p1)	
+	local SecondFrom = false
+
+	local damage = SpaceDamage(p2,self.Damage)
+
+
+	damage.sAnimation = "SwipeClaw2"
+	damage.sSound = self.SoundBase.."/attack"
+
+	for j = 1,3 do	--check if onther vek from behind or side
+		if Board:IsPawnSpace(p1 + DIR_VECTORS[(direction + j)% 4]) and Board:GetPawn(p1 + DIR_VECTORS[(direction + j)% 4]):GetTeam() == TEAM_ENEMY then 
+			SecondFrom = true 
+		else
+			SecondFrom = false
+		end
+	end
+	if SecondFrom then
+		damage.loc = p2 + DIR_VECTORS[(direction + 1)% 4]
+		ret:AddQueuedDamage(damage)
+		damage.loc = p2 - DIR_VECTORS[(direction + 1)% 4]
+		ret:AddQueuedDamage(damage)
+	else
+		ret:AddQueuedMelee(p1,damage)
+	end
+	return ret
+end	
 
 BetaLeaperAtkB_StarfishAtk = BetaLeaperAtk2_StarfishAtk:new{Damage = 5, Class = "Enemy", Name = "Rending Fangs"}
 
