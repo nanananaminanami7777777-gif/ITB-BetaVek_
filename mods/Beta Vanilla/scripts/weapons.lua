@@ -22,7 +22,7 @@ BetaFireflyAtk1 = Skill:new{
 	TipImage = {
 		Unit = Point(2,3),
 		Enemy = Point(2,1),
-		Target = Point(2,2),
+		Target = Point(2,1),
 		CustomPawn = "BetaFirefly1"
 	}
 }
@@ -30,10 +30,13 @@ BetaFireflyAtk1 = Skill:new{
 function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 	local ret = SkillEffect()
 	local dir = GetDirection(p2 - p1)
-	local damage = SpaceDamage(target, self.Damage)		
+	local target = GetProjectileEnd(p1,p2) 
+	local damage = SpaceDamage(target, self.Damage)		 
+	local distance = 1
 
-	local target = GetProjectileEnd(p1,p2)  
-	if  p1:Manhattan(target)%2 == 1 then	
+	distance = (p1:Manhattan(target))%2
+	if  distance == 1 then
+		damage = SpaceDamage(target, self.Damage)	
 		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
 		damage.sAnimation = self.Explosion
 	else
@@ -48,20 +51,26 @@ end
 
 
 function BetaFireflyAtk1:GetTargetScore(p1,p2)
-	--Beta Firefly need to damage player in odd distant and heal vek in even distant
+	--Beta Firefly need to damage player in odd distance and heal vek in even distance
+	local distance = (p1:Manhattan(p2))%2
 	local ret = 0
-		if  p1:Manhattan(p2)%2 == 1 then --odd for damage
-			if (Board:IsPawnSpace(p2) and p2:GetTeam() == TEAM_PLAYER) or Board:GetTerrain(p2) == TERRAIN_BUILDING then 
-				ret = ret + 5 
-			else 
-				ret = ret - 5  
+		if 	Board:IsPawnSpace(p2)	then--check if unit
+			if  distance == 1 then	--odd for damage
+				if p2:GetTeam() == TEAM_PLAYER	then 
+					ret = ret + 5 
+				else 
+					ret = ret - 5  
+				end
+			else	--even for heal
+				if p2:GetTeam() == TEAM_ENEMY	then 
+					ret = ret + 5 
+				else 
+					ret = ret - 5  
+				end
 			end
-
-		else	--even for heal
-			if (Board:IsPawnSpace(p2) and p2:GetTeam() == TEAM_ENEMY) and Board:GetPawn(p2):IsQueued() then 
-				ret = ret + 5 
-			else 
-				ret = ret - 5  
+		else	--if not, then building, if odd distance
+			if	Board:GetTerrain(p2) == TERRAIN_BUILDING then
+				if   distance == 1 then 	ret = ret + 5 else 	ret = ret - 5  end
 			end
 		end
 	return ret
@@ -83,7 +92,7 @@ BetaFireflyAtk2 = BetaFireflyAtk1:new{
 	TipImage = {
 		Unit = Point(2,3),
 		Enemy = Point(2,1),
-		Target = Point(2,2),
+		Target = Point(2,1),
 		CustomPawn = "BetaFirefly2"
 	}
 }
