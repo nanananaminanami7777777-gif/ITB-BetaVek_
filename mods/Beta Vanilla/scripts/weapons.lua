@@ -32,10 +32,7 @@ function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 	local dir = GetDirection(p2 - p1)
 	local target = GetProjectileEnd(p1,p2) 
 	local damage = SpaceDamage(target, self.Damage)		 
-	local distance = 1
-
-	distance = (p1:Manhattan(target))%2
-	if  distance == 1 then
+	if  (p1:Manhattan(target))%2 == 1 then
 		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
 	else
 		damage.iDamage = -self.Damage
@@ -128,25 +125,16 @@ function BetaHornetAtk1:GetSkillEffect(p1, p2)
 	damage.sAnimation = "explohornet_"..direction
 
 	if Board:IsDeadly(damage, user) then 
-		if self.TargetBehind then		
-			damage.sPawn = "BetaHornet2" 	
-		else 	
-			damage.sPawn = "BetaHornet1" 
-		end
+		damage.sPawn = "BetaHornet1" 
 		damage.bKO_Effect = true --this is just visuals
 	end
 
-	if Board:IsDeadly(damage2, user) then 
-		if self.TargetBehind then		
-			damage2.sPawn = "BetaHornet2" 	
-		else 	
-			damage2.sPawn = "BetaHornet1" 
-		end
-		damage2.bKO_Effect = true --this is just visuals
-	end
-	
 	ret:AddQueuedMelee(p1,damage, 0.25)
 	if self.TargetBehind then
+		if Board:IsDeadly(damage2, user) then 
+			damage2.sPawn = "BetaHornet2" 	
+			damage2.bKO_Effect = true --this is just visuals
+		end
 		ret:AddQueuedDamage(damage2)
 	end
 	return ret
