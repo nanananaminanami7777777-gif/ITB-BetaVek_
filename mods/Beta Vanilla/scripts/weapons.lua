@@ -20,7 +20,7 @@ BetaFireflyAtk1 = Skill:new{
 	ImpactSound = "/impact/dynamic/enemy_projectile",
 	Projectile = "effects/shot_firefly",
 	TipImage = {
-		Unit = Point(2,3),
+		Unit = Point(2,2),
 		Enemy = Point(2,1),
 		Target = Point(2,1),
 		CustomPawn = "BetaFirefly1"
@@ -58,7 +58,7 @@ function BetaFireflyAtk1:GetTargetScore(p1,p2)
 					ret = ret - 5
 				end
 			else	--even for heal
-				if Board:GetPawn(target):GetTeam() == TEAM_ENEMY 	then 
+				if Board:GetPawn(target):GetTeam() == TEAM_ENEMY and Board:GetPawn(target):IsQueued() then 
 					ret = ret + 5
 				else
 					ret = ret - 5	
@@ -89,7 +89,7 @@ BetaFireflyAtk2 = BetaFireflyAtk1:new{
 	ImpactSound = "/impact/dynamic/enemy_projectile",
 	Projectile = "effects/shot_firefly",
 	TipImage = {
-		Unit = Point(2,3),
+		Unit = Point(2,2),
 		Enemy = Point(2,1),
 		Target = Point(2,1),
 		CustomPawn = "BetaFirefly2"
@@ -266,36 +266,33 @@ BetaScorpionAtk1 = Skill:new{
 	}
 }
 
-
-function SkillEffect:New_AddQueuedArtillery(self, origin, damage, graphics, delay) -- add our own queued artillery that can start from anywhere
-    local fx = SkillEffect()
-    fx["AddArtillery"](fx, origin, damage, graphics, delay)
-    self.q_effect:AppendAll(fx.effect)
-end
-
-
 function BetaScorpionAtk1:GetSkillEffect(p1, p2)
 	local ret = SkillEffect()
 	local direction = GetDirection(p2 - p1)
 	local p3 = p1 + DIR_VECTORS[(direction + 2)% 4]	--behind
-	local damage = SpaceDamage(behind, self.Damage)
+	local damage = SpaceDamage(p3, self.Damage)
 
 	--case1:p2 had unit but p3 empty: artillery from p3 to p2 , do damage
 	--case2:p3 had unit but p2 empty: p3 leap to p2 and damage
 	--case3:both p2 and p3 had unit: attack canceled.
-	
-	
+
+	SkillEffect["New_AddQueuedArtillery"] = function(self, origin, damage, graphics, delay) -- add our own queued artillery that can start from anywhere
+        local fx = SkillEffect()
+        fx["AddArtillery"](fx, origin, damage, graphics, delay)
+        self.q_effect:AppendAll(fx.effect)
+    end
+
+	ret:AddDamage(SoundEffect(p2,self.SoundBase.."/attack_web"))
+	ret:AddGrapple(p1,p2,"hold")	
 
 	if Board:IsPawnSpace(p3) then 
-		if	not IsPawnSpace(p1) then 
+		if	not IsPawnSpace(p2) then 
 			ret:AddLeap(p2,FULL_DELAY)	
 			ret:AddQueuedMelee(p1,damage)
 		end
-	elseif Board:GetTerrain(p3) == TERRAIN_MOUNTAIN or Board:GetTerrain(p3) == TERRAIN_BUILDING then
-		ret:AddQueuedMelee(p3)
 	else
 		damage.loc = p2
-		ret:New_AddQueuedArtillery(p1, p3, damage, self.Projectile)
+		ret:New_AddQueuedArtillery(p3, damage, self.Projectile, 0)
 	end
 
 	return ret
@@ -306,8 +303,6 @@ function BetaScorpionAtk1:GetTargetScore(p1,p2)
 	local direction = GetDirection(p2 - p1)
 	local behind = p1 + DIR_VECTORS[(direction + 2)% 4]
 
-	if not Board:IsValid(behind)	then	ret = -100 end
-	if Board:IsPawnSpace(behind) and Board:GetPawnTeam(behind) == TEAM_ENEMY	then	ret = -100 end
 	return ret	
 end
 
