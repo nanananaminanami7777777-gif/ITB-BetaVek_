@@ -30,10 +30,11 @@ BetaFireflyAtk1 = Skill:new{
 function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 	local ret = SkillEffect()
 	local dir = GetDirection(p2 - p1)
-	local target = GetProjectileEnd(p1,p2) 
+	local target = GetProjectileEnd(p1,p2,PATH_PROJECTILE) 
 	local damage = SpaceDamage(target, self.Damage)	
 	local distance = p1:Manhattan(target)%2	
 	if  distance == 1 then
+		damage.iDamage = self.Damage
 		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
 	else
 		damage.iDamage = -self.Damage
@@ -51,15 +52,15 @@ function BetaFireflyAtk1:GetTargetScore(p1,p2)
 		if 	Board:IsPawnSpace(p2)	then--check if unit
 			if  distance == 1 then	--odd for damage
 				if Board:GetPawn(p2):GetTeam() == TEAM_PLAYER	then 
-					ret = ret + 10  
+					ret = ret + 5 
 				else
-					ret = ret + 5
+					ret = ret - 5
 				end
 			else	--even for heal
 				if Board:GetPawn(p2):GetTeam() == TEAM_ENEMY 	then 
-					ret = ret + 10
+					ret = ret + 5
 				else
-					ret = ret + 5	
+					ret = ret - 5	
 				end
 			end
 		else
