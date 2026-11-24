@@ -12,7 +12,7 @@ BetaFireflyAtk1 = Skill:new{
 	Name = "Unstable Thorax",
 	Description = "Launch a unstable mass of goo either dealing 1 damage and boosted, or Heal 1 and burn.",
 	Damage = 1,
-	PathSize = 1,
+	PathSize = 1,	
 	Range = RANGE_PROJECTILE,
 	Class = "Enemy",
 	Icon = "weapons/enemy_firefly1.png",
@@ -47,24 +47,25 @@ end
 
 function BetaFireflyAtk1:GetTargetScore(p1,p2)
 	--Beta Firefly need to damage player in odd distance and heal vek in even distance
-	local distance = (p1:Manhattan(p2))%2
+	local target = GetProjectileEnd(p1,p2,PATH_PROJECTILE) 
+	local distance = (p1:Manhattan(target))%2
 	local ret = 0
-		if 	Board:IsPawnSpace(p2)	then--check if unit
+		if 	Board:IsPawnSpace(target)	then--check if unit
 			if  distance == 1 then	--odd for damage
-				if Board:GetPawn(p2):GetTeam() == TEAM_PLAYER	then 
+				if Board:GetPawn(target):GetTeam() == TEAM_PLAYER	then 
 					ret = ret + 5 
 				else
 					ret = ret - 5
 				end
 			else	--even for heal
-				if Board:GetPawn(p2):GetTeam() == TEAM_ENEMY 	then 
+				if Board:GetPawn(target):GetTeam() == TEAM_ENEMY 	then 
 					ret = ret + 5
 				else
 					ret = ret - 5	
 				end
 			end
 		else
-			if Board:GetTerrain(p2) == TERRAIN_BUILDING	then	
+			if Board:GetTerrain(target) == TERRAIN_BUILDING	then	
 				if  distance == 1 then		
 					ret = ret + 5
 				end
@@ -73,13 +74,14 @@ function BetaFireflyAtk1:GetTargetScore(p1,p2)
 	return ret
 end
 
+
+
 ----------|||------------
 
 BetaFireflyAtk2 = BetaFireflyAtk1:new{
 	Name = "Volatile Thorax",
 	Description = "Launch a unstable mass of goo either dealing 3 damage and boosted, or Heal 3 and burn.",
 	Damage = 3,
-	PathSize = 8,
 	Range = RANGE_PROJECTILE,
 	Class = "Enemy",
 	Icon = "weapons/enemy_firefly2.png",
@@ -170,7 +172,7 @@ BetaHornetAtkB = BetaHornetAtk2:new{Damage = 6, Class = "Enemy", Name = "Impalin
 ----------------------
 
 BetaLeaperAtk1_StarfishAtk = Skill:new{
-	Name = "split Fangs",
+	Name = "Split Fangs",
 	Description = "preparing to strike a target for 3 damage, attack two oblique tiles if other veks on side or behind.",
 	PathSize = 1,
 	Icon = "weapons/enemy_scorpion1.png",	
@@ -193,22 +195,26 @@ function BetaLeaperAtk1_StarfishAtk:GetSkillEffect(p1, p2)
 	local SecondFrom = false
 
 	local damage = SpaceDamage(p2,self.Damage)
-
+	local count = 0
 
 	damage.sAnimation = "SwipeClaw2"
 	damage.sSound = self.SoundBase.."/attack"
 
 	for j = 1,3 do	--check if onther vek from behind or side
 		if Board:IsPawnSpace(p1 + DIR_VECTORS[(direction + j)% 4]) and Board:GetPawn(p1 + DIR_VECTORS[(direction + j)% 4]):GetTeam() == TEAM_ENEMY then 
-			SecondFrom = true 
+			SecondFrom = true
 		else
-			SecondFrom = false
+			count = count + 1
 		end
+	end
+	if count == 3 then 
+		SecondFrom = false
+		count = 0
 	end
 	if SecondFrom then
 		damage.loc = p2 + DIR_VECTORS[(direction + 1)% 4]
 		ret:AddQueuedDamage(damage)
-		damage.loc = p2 - DIR_VECTORS[(direction + 1)% 4]
+		damage.loc = p2 + DIR_VECTORS[(direction - 1)% 4]
 		ret:AddQueuedDamage(damage)
 	else
 		ret:AddQueuedMelee(p1,damage)
@@ -219,7 +225,7 @@ end
 ----------|||------------
 
 BetaLeaperAtk2_StarfishAtk = BetaLeaperAtk1_StarfishAtk:new{
-	Name = "double Fangs",
+	Name = "Double Fangs",
 	Description = "preparing to strike a target for 5 damage, attack two oblique tiles if other veks on side or behind.",
 	PathSize = 1,
 	Icon = "weapons/enemy_scorpion2.png",	
@@ -235,35 +241,6 @@ BetaLeaperAtk2_StarfishAtk = BetaLeaperAtk1_StarfishAtk:new{
 		CustomPawn = "BetaLeaper2"
 	}
 }
-
-function BetaLeaperAtk2_StarfishAtk:GetSkillEffect(p1, p2)
-	local ret = SkillEffect()
-	local direction = GetDirection(p2 - p1)	
-	local SecondFrom = false
-
-	local damage = SpaceDamage(p2,self.Damage)
-
-
-	damage.sAnimation = "SwipeClaw2"
-	damage.sSound = self.SoundBase.."/attack"
-
-	for j = 1,3 do	--check if onther vek from behind or side
-		if Board:IsPawnSpace(p1 + DIR_VECTORS[(direction + j)% 4]) and Board:GetPawn(p1 + DIR_VECTORS[(direction + j)% 4]):GetTeam() == TEAM_ENEMY then 
-			SecondFrom = true 
-		else
-			SecondFrom = false
-		end
-	end
-	if SecondFrom then
-		damage.loc = p2 + DIR_VECTORS[(direction + 1)% 4]
-		ret:AddQueuedDamage(damage)
-		damage.loc = p2 - DIR_VECTORS[(direction + 1)% 4]
-		ret:AddQueuedDamage(damage)
-	else
-		ret:AddQueuedMelee(p1,damage)
-	end
-	return ret
-end	
 
 BetaLeaperAtkB_StarfishAtk = BetaLeaperAtk2_StarfishAtk:new{Damage = 5, Class = "Enemy", Name = "Rending Fangs"}
 
@@ -329,7 +306,7 @@ function BetaScorpionAtk1:GetTargetScore(p1,p2)
 	local direction = GetDirection(p2 - p1)
 	local behind = p1 + DIR_VECTORS[(direction + 2)% 4]
 
-	if Board:IsEdge(behind)	then	ret = -100 end
+	if not Board:IsValid(behind)	then	ret = -100 end
 	if Board:IsPawnSpace(behind) and Board:GetPawnTeam(behind) == TEAM_ENEMY	then	ret = -100 end
 	return ret	
 end
