@@ -21,6 +21,7 @@ local mod = {
 function mod:init()
 	require(self.scriptPath.."replaceSpawns")	--Logic that replaces Alphas with Omegas(Beta). Had to copy it because i dont know how it work ._.
 	require(self.scriptPath.."libs/status")
+	require(self.scriptPath.."libs/trait")	
 end
 
 function mod:load(options, version)
