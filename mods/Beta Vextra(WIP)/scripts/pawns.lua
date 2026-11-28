@@ -353,3 +353,16 @@ OmegaDNT_Thunderbug2 = Pawn:new{
 	Tier = TIER_OMEGA,
 }
 AddPawn("OmegaDNT_Thunderbug2")
+
+local HOOK_pawnTracked = function(mission, pawn)
+	if not mission or not pawn then return end
+	if pawn:GetType() == "OmegaDNT_Fly2" then Status.ApplyDodge(pawn:GetId(), 1, 1, "Leap", false) end
+	if pawn:GetType() == "OmegaDNT_Pillbug2" then Status.ApplyTough(Pawn:GetId(), 1) end
+	if pawn:GetType() == "OmegaDNT_Silkworm2" then Status.ApplyRepulsive(pawn:GetId(), 0) end
+end
+
+local function EVENT_onModsLoaded()
+	modapiext:addPawnTrackedHook(HOOK_pawnTracked)
+end
+
+modApi.events.onModsLoaded:subscribe(EVENT_onModsLoaded)

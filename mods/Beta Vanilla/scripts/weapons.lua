@@ -303,6 +303,7 @@ function BetaScorpionAtk1:GetTargetScore(p1,p2)
 	local direction = GetDirection(p2 - p1)
 	local behind = p1 + DIR_VECTORS[(direction + 2)% 4]
 
+	
 	return ret	
 end
 

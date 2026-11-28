@@ -733,3 +733,81 @@ BetaBlob2 = {
 	Tier = TIER_Beta,
 }
 AddPawn("BetaBlob2") 
+
+local function GetAdjacentStarfishLocs(point)
+	local ret = {}
+	for i = DIR_START, DIR_END do
+  		local curr = point + DIR_VECTORS[i]
+  		if Board:GetPawn(curr) and (Board:GetPawn(curr):GetType() == "BetaStarfish1" or Board:GetPawn(curr):GetType() == "BetaStarfish2") then
+    	ret[#ret+1] = curr
+  		end
+	end
+	return ret
+end
+
+local function GetAdjacentStarfishIds(point)
+	local ret = {}
+	for i = DIR_START, DIR_END do
+  		local curr = point + DIR_VECTORS[i]
+  		if Board:GetPawn(curr) and (Board:GetPawn(curr):GetType() == "BetaStarfish1" or Board:GetPawn(curr):GetType() == "BetaStarfish2") then
+			ret[#ret+1] = Board:GetPawn(curr):GetId()
+  		end
+	end
+	return ret
+end
+
+local function StarfishFlee(skillEffect, key)
+	local starfishesThatMoved = {}
+	local starfishesThatPanic = {}
+	local reservedTiles = {}
+	
+	for _, fx in ipairs(extract_table(skillEffect[key])) do
+		if fx.iDamage > 0 and fx.iDamage ~= DAMAGE_ZERO then
+			local starfishesFleelist = GetAdjacentStarfishIds(fx.loc)
+			for _, id in ipairs(starfishesFleelist) do
+				starfishesThatPanic[id] = (starfishesThatPanic[id] or 0) + 1
+			end	
+		end	
+	end
+	for id, count in pairs(starfishesThatPanic) do
+		if count > 1 then
+			table.insert(starfishesThatMoved, id)
+		end
+	end
+	for _, fx in ipairs(extract_table(skillEffect[key])) do
+		local starfishLocs = GetAdjacentStarfishLocs(fx.loc)
+		if fx.iDamage > 0 and fx.iDamage ~= DAMAGE_ZERO and #starfishLocs > 0 then
+			for _, starfishLoc in ipairs(starfishLocs) do
+				local moveTo = starfishLoc + DIR_VECTORS[GetDirection(starfishLoc - fx.loc)]
+    			local starfishId = Board:GetPawn(starfishLoc):GetId()
+    			if not (list_contains(starfishesThatMoved, starfishId) or Board:IsBlocked(moveTo, PATH_GROUND) ) then
+					table.insert(starfishesThatMoved, starfishId)
+      				local move = PointList()
+      				move:push_back(starfishLoc)
+      				move:push_back(moveTo)
+      				--skillEffect:AddCharge(move, NO_DELAY)
+					if key == "q_effect" then skillEffect:AddQueuedCharge(move, NO_DELAY) else skillEffect:AddCharge(move, NO_DELAY) end
+    			end
+  			end  			
+		end
+	end
+end
+
+local HOOK_Starfish = function(mission, pawn, weaponId, p1, p2, skillEffect)
+	if not mission or not pawn then return end
+	StarfishFlee(skillEffect, "effect")
+	StarfishFlee(skillEffect, "q_effect")
+end
+
+--local HOOK_Starfish_Queued = function(mission, pawn, weaponId, p1, p2, p3, skillEffect)
+--	if not mission or not pawn then return end
+--	StarfishFlee(skillEffect, "effect")
+--	StarfishFlee(skillEffect, "q_effect")
+--end
+
+local function EVENT_onModsLoaded()
+	modapiext:addSkillBuildHook(HOOK_Starfish)
+--	modapiext:addFinalEffectBuildHook(HOOK_Starfish_Queued)	
+end
+
+modApi.events.onModsLoaded:subscribe(EVENT_onModsLoaded)
