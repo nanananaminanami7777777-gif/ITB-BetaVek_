@@ -6,12 +6,31 @@ local writepath = "img/units/aliens/"
 local readpath = resourcePath .. writepath
 local imagepath = writepath:sub(5,-1)
 local a = ANIMS
+local trait = require(mod.scriptPath..'libs/trait')
 
 local function IsTipImage()
 	return Board:GetSize() == Point(6,6)
 end
 
 TIER_Beta = 20
+
+-------------
+--  Trait  --
+-------------
+
+trait:add({
+    pawnType = "BetaStarfish1",
+    icon = resourcePath.."img/combat/traits/sweat.png",
+    desc_title = "Timid",
+    desc_text = "This vek will flee away if somthing adjacent being damaged."
+})
+
+trait:add({
+    pawnType = "BetaStarfish2",
+    icon = resourcePath.."img/combat/traits/sweat.png",
+    desc_title = "Timid",
+    desc_text = "This vek will flee away if somthing adjacent being damaged."
+})
 
 -------------
 --   Art   --
@@ -732,7 +751,7 @@ BetaBlob2 = {
 	ImpactMaterial = IMPACT_BLOB,
 	Tier = TIER_Beta,
 }
-AddPawn("BetaBlob2") 
+AddPawn("BetaBlob2")
 
 local function GetAdjacentStarfishLocs(point)
 	local ret = {}

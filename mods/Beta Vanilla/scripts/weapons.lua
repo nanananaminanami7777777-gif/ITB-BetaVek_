@@ -10,8 +10,8 @@ modApi:appendAsset("img/effects/stinger_U.png", resourcePath.."img/effects/sting
 
 BetaFireflyAtk1 = Skill:new{
 	Name = "Unstable Thorax",
-	Description = "Launch a unstable mass of goo either dealing 1 damage and boosted, or Heal 1 and burn.",
-	Damage = 1,
+	Description = "Launch a unstable mass of goo either dealing 2 damage and boosted, or Heal 2 and burn.",
+	Damage = 2,
 	PathSize = 1,	
 	Range = RANGE_PROJECTILE,
 	Class = "Enemy",
@@ -36,6 +36,7 @@ function BetaFireflyAtk1:GetSkillEffect(p1,p2)
 	if  distance == 1 then
 		damage.iDamage = self.Damage
 		if Board:GetPawn(target) then damage.sScript = string.format("Board:GetPawn(%s):SetBoosted(true)", Board:GetPawn(target):GetId()) end
+		--if Board:GetPawn(target) then damage.iRegen = 1 end
 	else
 		damage.iDamage = -self.Damage
 		damage.iFire = 1
@@ -80,8 +81,8 @@ end
 
 BetaFireflyAtk2 = BetaFireflyAtk1:new{
 	Name = "Volatile Thorax",
-	Description = "Launch a unstable mass of goo either dealing 3 damage and boosted, or Heal 3 and burn.",
-	Damage = 3,
+	Description = "Launch a unstable mass of goo either dealing 4 damage and boosted, or Heal 4 and burn.",
+	Damage = 4,
 	Range = RANGE_PROJECTILE,
 	Class = "Enemy",
 	Icon = "weapons/enemy_firefly2.png",
@@ -244,7 +245,7 @@ BetaLeaperAtk2_StarfishAtk = BetaLeaperAtk1_StarfishAtk:new{
 
 BetaLeaperAtkB_StarfishAtk = BetaLeaperAtk2_StarfishAtk:new{Damage = 5, Class = "Enemy", Name = "Rending Fangs"}
 
---scorpion
+--Scorpion
 ----------------------
 BetaScorpionAtk1 = Skill:new{
 	Name = "Backsting Spinneret",
@@ -270,7 +271,7 @@ function BetaScorpionAtk1:GetSkillEffect(p1, p2)
 	local ret = SkillEffect()
 	local direction = GetDirection(p2 - p1)
 	local p3 = p1 + DIR_VECTORS[(direction + 2)% 4]	--behind
-	local damage = SpaceDamage(p3, self.Damage)
+	local damage = SpaceDamage(p2, self.Damage)
 
 	--case1:p2 had unit but p3 empty: artillery from p3 to p2 , do damage
 	--case2:p3 had unit but p2 empty: p3 leap to p2 and damage
@@ -285,16 +286,28 @@ function BetaScorpionAtk1:GetSkillEffect(p1, p2)
 	ret:AddDamage(SoundEffect(p2,self.SoundBase.."/attack_web"))
 	ret:AddGrapple(p1,p2,"hold")	
 
-	if Board:IsPawnSpace(p3) then 
-		if	not IsPawnSpace(p2) then 
-			ret:AddLeap(p2,FULL_DELAY)	
-			ret:AddQueuedMelee(p1,damage)
+	
+
+	if Board:IsPawnSpace(p3) then
+		if	not Board:IsPawnSpace(p2) then 
+				-- actual leap via script to hide preview.
+				ret:AddQueuedScript(string.format([[
+					local leap = PointList();
+					leap:push_back(%s);
+					leap:push_back(%s);
+					fx = SkillEffect();
+					fx:AddLeap(leap, NO_DELAY);
+					Board:AddEffect(fx);
+				]], p3:GetString(), p2:GetString()))
+				damage.loc = p3
+				ret:AddQueuedDamage(damage)
+		else
+			ret:AddQueuedDelay(0.75)
+			ret:AddQueuedScript("Board:AddAlert(".. p1:GetString() ..", 'ATTACK BLOCKED')")
 		end
 	else
-		damage.loc = p2
 		ret:New_AddQueuedArtillery(p3, damage, self.Projectile, 0)
 	end
-
 	return ret
 end	
 
@@ -302,8 +315,13 @@ function BetaScorpionAtk1:GetTargetScore(p1,p2)
 	local ret = 0
 	local direction = GetDirection(p2 - p1)
 	local behind = p1 + DIR_VECTORS[(direction + 2)% 4]
-
-	
+	if Board:IsPawnSpace(p2) then
+		if Board:GetPawn(p2):GetTeam() == TEAM_PLAYER	then
+			ret = ret + 5
+		end
+	elseif Board:GetTerrain(p2) == TERRAIN_BUILDING	then 
+		ret = ret + 5
+	end		
 	return ret	
 end
 
@@ -330,3 +348,88 @@ BetaScorpionAtk2 = BetaScorpionAtk1:new{
 }
 
 BetaScorpionAtkB = BetaScorpionAtk2:new{Damage = 4, Class = "Enemy", Name = "Rupturing Spinneret"}
+
+--Beetle
+----------------------
+BetaBeetleAtk1 = Skill:new{
+	Name = "Accelerating Pincers",
+	Description = "Charge forward to deal 4 damage and push everything adjacent, dealing 1 self-damage.",
+	Damage = 0,
+	Class = "Enemy",
+	LaunchSound = "/enemy/beetle_1/attack_charge",
+	Icon = "weapons/brute_beetle.png",
+	PathSize = 1,--just needs to target immediately adjacent locations
+	Explosion = "ExploAir1",
+	TipImage = {
+		Unit = Point(2,4),
+		Target = Point(2,3),
+		Enemy = Point(2,1),
+		CustomPawn = "BetaBeetle1",
+	}
+}
+
+function BetaBeetleAtk2:GetSkillEffect(p1,p2)
+	local ret = SkillEffect()
+	local direction = GetDirection(p2 - p1)
+	local target = GetProjectileEnd(p1,p2,PATH_GROUND)
+	local doDamage = (p1:Manhattan(target))
+	if not Board:IsBlocked(target,PATH_GROUND) then -- dont attack an empty edge square, just run to the edge
+		doDamage = 0
+		target = target + DIR_VECTORS[direction]
+	end
+	if not Board:IsPawnSpace(target) and (Board:GetTerrain(target) == TERRAIN_WATER or Board:GetTerrain(target) == TERRAIN_HOLE) then --run into water/hole and die!
+		doDamage = 0
+		target = target + DIR_VECTORS[direction]
+	end
+	local dest = target - DIR_VECTORS[direction]
+	ret:AddQueuedCharge(Board:GetSimplePath(p1, dest), FULL_DELAY)
+
+	if doDamage == 1 then 
+		damage = SpaceDamage(target, self.Damage)
+		damage.sAnimation = "ExploAir2"
+		damage.sSound = "/enemy/beetle_1/attack_impact"
+		ret:AddQueuedDamage(damage)
+	end
+
+	if doDamage == 2 then 
+		damage = SpaceDamage(target, self.Damage + 2, direction)
+		damage.sAnimation = "ExploAir2"
+		damage.sSound = "/enemy/beetle_1/attack_impact"
+		ret:AddQueuedDamage(damage)
+	end
+
+	if doDamage >=3 then 
+		for i = DIR_START, DIR_END do
+			local curr = dest + DIR_VECTORS[i]
+			local damage = SpaceDamage(curr, self.Damage + 4, i)
+			damage.sAnimation = "exploout2_"..i
+			ret:AddQueuedDamage(damage)
+		end
+		local selfDamage = SpaceDamage(dest, 1)
+		selfDamage.sAnimation = "ExploArt2"
+		selfDamage.sSound = "/enemy/beetle_1/attack_impact"
+		ret:AddQueuedDamage(selfDamage)
+	end
+	
+	return ret
+end
+
+----------|||------------
+BetaBeetleAtk2 = Skill:new{
+	Name = "Rushing Pincers",
+	Description = "Charge forward to deal up to 5 damage and push everything adjacent, dealing 1 self-damage.",
+	Damage = 1,
+	Class = "Enemy",
+	LaunchSound = "/enemy/beetle_1/attack_charge",
+	Icon = "weapons/brute_beetle.png",
+	PathSize = 1,--just needs to target immediately adjacent locations
+	Explosion = "ExploAir1",
+	TipImage = {
+		Unit = Point(2,4),
+		Target = Point(2,3),
+		Enemy = Point(2,1),
+		CustomPawn = "BetaBeetle2",
+	}
+}
+
+BetaBeetleAtkB = BetaBeetleAtk2:new{Damage = 5, Class = "Enemy", Name = "Cataclysmic Pincers"}
